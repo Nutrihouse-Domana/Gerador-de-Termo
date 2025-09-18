@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerador de Termos de Responsabilidade — Nutrihouse</title>
+  <style>
+    /* ======= ESTILOS GERAIS ======= */
+    :root {
+      --page-width: 210mm;   /* A4 */
+      --page-height: 297mm;  /* A4 */
+      --page-margin: 18mm;   /* margem confortável para impressão */
+      --font-body: "Times New Roman", Times, serif; /* aproxima layout de documento */
+      --font-size: 12pt;
+      --muted: #4b5563;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-body);
+      font-size: var(--font-size);
+      line-height: 1.35;
+      margin: 0;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    /* Área de controles (não imprime) */
+    .controls {
+      box-sizing: border-box;
+      max-width: 1100px;
+      margin: 16px auto;
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      font-size: 15px;
+    }
+    .controls h1 { font-size: 20px; margin: 0 0 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .row { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 12px; }
+    .full { grid-column: 1 / -1; }
+    label { display:block; font-weight: 600; margin-bottom: 4px; }
+    input, select { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid #d1d5db; background: #fff; }
+    .actions { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    button { border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer; font-weight: 700; }
+    .btn-primary { background: #0ea5e9; color: white; }
+    .btn-outline { background: white; border: 2px solid #e5e7eb; }
+
+    /* Página imprimível */
+    .page {
+      width: var(--page-width);
+      min-height: var(--page-height);
+      margin: 24px auto 48px;
+      background: white;
+      color: #111827;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+      position: relative;
+    }
+    .page-inner { padding: var(--page-margin); }
+
+    /* Cabeçalho com logo */
+    .header { text-align: center; margin-bottom: 6mm; }
+    .logo { max-height: 26mm; max-width: 80mm; display:block; margin: 0 auto 6mm; }
+
+    /* Títulos e blocos de texto – reproduzem o layout do termo */
+    .title { text-align: center; font-weight: 700; text-transform: uppercase; }
+    .subtitle { text-align: left; font-weight: 700; text-transform: uppercase; margin-top: 4mm; }
+    .block { margin-top: 4mm; text-align: justify; }
+    .line { margin-top: 4mm; }
+    .signature { margin-top: 10mm; }
+    .muted { color: var(--muted); }
+
+    /* Ocultar controles e bordas na impressão */
+    @media print {
+      body { background: white; }
+      .controls { display: none !important; }
+      .page { box-shadow: none; margin: 0 auto; }
+      @page { size: A4; margin: 15mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================== CONTROLES (não imprime) ===================== -->
+  <section class="controls" aria-label="Gerador de Termos">
+    <h1>Gerador de Termos de Responsabilidade</h1>
+    <p class="muted" style="margin:4px 0 12px">Preencha os campos, selecione o tipo de termo e clique em <strong>Gerar</strong>. Ao final, use <strong>Imprimir → Salvar como PDF</strong>.</p>
+
+    <div class="row">
+      <div>
+        <label for="tipo">Tipo de termo</label>
+        <select id="tipo">
+          <option value="computador">Computador / Notebook</option>
+          <option value="telefone">Telefone Celular</option>
+        </select>
+      </div>
+      <div class="full"></div>
+      <div>
+        <label for="nome">Nome</label>
+        <input id="nome" placeholder="Nome completo" />
+      </div>
+      <div>
+        <label for="cpf">CPF</label>
+        <input id="cpf" placeholder="000.000.000-00" />
+      </div>
+      <div>
+        <label for="fone">Fone para contato</label>
+        <input id="fone" placeholder="(00) 00000-0000" />
+      </div>
+      <div>
+        <label for="email">E-mail</label>
+        <input id="email" placeholder="nome@empresa.com.br" />
+      </div>
+
+      <!-- Campos específicos por termo -->
+      <div class="full"></div>
+      <div>
+        <label for="estado">Estado do dispositivo / Modelo</label>
+        <input id="estado" placeholder="Ex.: Notebook Dell Vostro 3510 / Celular Motorola E32" />
+      </div>
+      <div id="boxTombo">
+        <label for="tombo">Tombo</label>
+        <input id="tombo" placeholder="Ex.: 43466" />
+      </div>
+      <div id="boxSN">
+        <label for="sn">S/N</label>
+        <input id="sn" placeholder="Ex.: PF112F003" />
+      </div>
+      <div id="boxIMEI" style="display:none">
+        <label for="imei">IMEI</label>
+        <input id="imei" placeholder="Ex.: 3561 2345 6789 012" />
+      </div>
+
+      <div class="full"></div>
+      <div>
+        <label for="local">Local</label>
+        <input id="local" placeholder="Ex.: Jaboatão dos Guararapes-PE" />
+      </div>
+      <div>
+        <label for="data">Data</label>
+        <input id="data" type="date" />
+      </div>
+
+      <div class="full"></div>
+      <div class="full">
+        <label for="logo">Logo da empresa (PNG/JPG)</label>
+        <input id="logo" type="file" accept="image/*" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="btnGerar">Gerar</button>
+      <button class="btn-outline" id="btnLimpar" title="Limpar formulário">Limpar</button>
+      <button class="btn-outline" id="btnImprimir" title="Imprimir / PDF">Imprimir / PDF</button>
+    </div>
+
+    <p class="muted" style="margin-top:8px">Dica: se o navegador exibir cabeçalho/rodapé com URL na impressão, desative a opção <em>"Cabeçalhos e rodapés"</em> no diálogo de impressão.</p>
+  </section>
+
+  <!-- ===================== PÁGINA IMPRIMÍVEL ===================== -->
+  <section class="page" aria-label="Termo gerado">
+    <div class="page-inner" id="printArea">
+      <header class="header">
+        <img id="logoImg" class="logo" alt="Logo da empresa" style="display:none"/>
+        <div class="muted" id="cabecalhoLocalData" style="text-align:right"></div>
+      </header>
+
+      <div class="title">TERMO DE RESPONSABILIDADE PELA GUARDA E USO DE EQUIPAMENTO DE TRABALHO</div>
+      <div class="subtitle">IDENTIFICAÇÃO DO EMPREGADO</div>
+
+      <div class="block">
+        <div><strong>Nome:</strong> <span id="outNome">____________________________</span></div>
+        <div><strong>CPF:</strong> <span id="outCPF">____________________________</span></div>
+        <div><strong>Fone para contato:</strong> <span id="outFone">____________________________</span></div>
+        <div><strong>E-mail:</strong> <span id="outEmail">____________________________</span></div>
+      </div>
+
+      <!-- Bloco fixo do termo – conteúdo copiado do modelo, sem alterações -->
+      <div class="block" id="textoFixo">
+        Recebi da empresa MCP REFEIÇÕES LTDA, empresa do grupo empresarial NUTRIHOUSE, com endereço com endereço na Av. Dr Júlio Maranhão, nº 1210, Guararapes, Jaboatão dos Guararapes-PE, CEP 54340-000 inscrita no CNPJ nº 06.088.039/0001-99, a título de empréstimo, para meu uso exclusivo, conforme determinado na lei, os equipamentos especificados neste termo de responsabilidade, comprometendo-me a mantê-los em perfeito estado de conservação, ficando ciente de que: 1- Se o equipamento for danificado ou inutilizado por emprego inadequado, mau uso, negligência ou extravio, a empresa me fornecerá novo equipamento e cobrará o valor para aquisição de um equipamento da mesma marca ou equivalente ao da praça, com descontos na folha de pagamento, independente de culpa ou dolo. 2- Em caso de dano, inutilização ou extravio do equipamento deverei comunicar, imediatamente ao setor competente da empresa. 3- Terminando os serviços ou no caso de rescisão do contrato de trabalho, devolverei o equipamento completo e em perfeito estado de conservação, considerando-se o tempo do uso dele, ao setor competente. 4- Estando os equipamentos em minha posse, estarei sujeito a inspeções sem prévio aviso.
+      </div>
+
+      <!-- Campos específicos (alternam conforme o tipo) -->
+      <div class="block" id="blocoComputador">
+        <div><strong>Estado do dispositivo:</strong> <span id="outEstadoPC">____________________________</span></div>
+        <div><strong>Tombo:</strong> <span id="outTombo">____________________________</span></div>
+        <div><strong>S/N:</strong> <span id="outSN">____________________________</span></div>
+      </div>
+      <div class="block" id="blocoTelefone" style="display:none">
+        <div><strong>Celular</strong> <span id="outEstadoTEL">____________________________</span></div>
+        <div><strong>IMEI:</strong> <span id="outIMEI">____________________________</span></div>
+      </div>
+
+      <div class="line" id="linhaLocalData">&nbsp;</div>
+
+      <div class="signature">Assinatura ___________________________________________________</div>
+
+      <div class="block" style="margin-top:8mm">
+        <strong>DEVOLUÇÃO:</strong> Atestamos que o bem foi devolvido em (dia)/(mês)/(ano), nas seguintes condições:(_) Em perfeito estado (_) Apresentando defeito (_) Faltando peças ou acessórios (assinatura) (nome do responsável pelo recebimento do Termo de Responsabilidade).
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // ============================
+    // Funções utilitárias
+    // ============================
+    const el = id => document.getElementById(id);
+
+    function formatarDataExtenso(iso) {
+      if (!iso) return "(dia)/(mês)/(ano)";
+      const d = new Date(iso + 'T00:00:00');
+      const meses = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+      const dia = String(d.getDate()).padStart(2,'0');
+      const mesNome = meses[d.getMonth()];
+      const ano = d.getFullYear();
+      return `${dia} de ${mesNome} de ${ano}`;
+    }
+
+    function atualizarVisibilidadeCampos() {
+      const tipo = el('tipo').value;
+      const pc = (tipo === 'computador');
+      el('boxTombo').style.display = pc ? '' : 'none';
+      el('boxSN').style.display = pc ? '' : 'none';
+      el('boxIMEI').style.display = pc ? 'none' : '';
+      el('blocoComputador').style.display = pc ? '' : 'none';
+      el('blocoTelefone').style.display = pc ? 'none' : '';
+    }
+
+    // Prepara listeners
+    el('tipo').addEventListener('change', atualizarVisibilidadeCampos);
+
+    // Logo: preview imediato e inclusão na impressão
+    el('logo').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) { el('logoImg').style.display = 'none'; el('logoImg').src=''; return; }
+      const fr = new FileReader();
+      fr.onload = () => { el('logoImg').src = fr.result; el('logoImg').style.display = 'block'; };
+      fr.readAsDataURL(file);
+    });
+
+    // Botão Limpar
+    el('btnLimpar').addEventListener('click', () => {
+      document.querySelectorAll('input').forEach(i => { if (i.type !== 'file') i.value = ''; });
+      el('logo').value = '';
+      el('logoImg').style.display = 'none';
+      el('logoImg').src='';
+      el('cabecalhoLocalData').textContent = '';
+      el('linhaLocalData').textContent = '\u00A0';
+      el('outNome').textContent = '____________________________';
+      el('outCPF').textContent = '____________________________';
+      el('outFone').textContent = '____________________________';
+      el('outEmail').textContent = '____________________________';
+      el('outEstadoPC').textContent = '____________________________';
+      el('outTombo').textContent = '____________________________';
+      el('outSN').textContent = '____________________________';
+      el('outEstadoTEL').textContent = '____________________________';
+      el('outIMEI').textContent = '____________________________';
+    });
+
+    // Botão Gerar – preenche o documento sem alterar o texto original do termo
+    el('btnGerar').addEventListener('click', () => {
+      const tipo = el('tipo').value;
+      const nome = el('nome').value.trim();
+      const cpf = el('cpf').value.trim();
+      const fone = el('fone').value.trim();
+      const email = el('email').value.trim();
+      const estado = el('estado').value.trim();
+      const tombo = el('tombo').value.trim();
+      const sn = el('sn').value.trim();
+      const imei = el('imei').value.trim();
+      const local = el('local').value.trim();
+      const dataISO = el('data').value; // yyyy-mm-dd
+
+      // Saídas comuns
+      el('outNome').textContent = nome || '____________________________';
+      el('outCPF').textContent = cpf || '____________________________';
+      el('outFone').textContent = fone || '____________________________';
+      el('outEmail').textContent = email || '____________________________';
+
+      // Cabeçalho (opcional). Se quiser a data lá em cima, ative abaixo.
+      el('cabecalhoLocalData').textContent = '';
+
+      // Campos específicos
+      if (tipo === 'computador') {
+        el('outEstadoPC').textContent = estado || '____________________________';
+        el('outTombo').textContent = tombo || '____________________________';
+        el('outSN').textContent = sn || '____________________________';
+      } else {
+        el('outEstadoTEL').textContent = estado || '____________________________';
+        el('outIMEI').textContent = imei || '____________________________';
+      }
+
+      // Linha de local e data – conserva o padrão do modelo
+      const dataExt = formatarDataExtenso(dataISO);
+      const textoLocalData = local ? `${local}, ${dataExt}.` : dataExt;
+      el('linhaLocalData').textContent = textoLocalData;
+
+      // Garante visibilidades corretas
+      atualizarVisibilidadeCampos();
+
+      // Rola até a página para inspeção antes de imprimir
+      document.querySelector('.page').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Botão Imprimir – usa diálogo nativo (Salvar como PDF)
+    el('btnImprimir').addEventListener('click', () => {
+      window.print();
+    });
+
+    // Estado inicial coerente
+    atualizarVisibilidadeCampos();
+  </script>
+</body>
+</html>
